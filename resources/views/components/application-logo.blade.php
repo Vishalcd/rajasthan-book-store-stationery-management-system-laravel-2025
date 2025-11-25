@@ -1,0 +1,1 @@
+<x-tabler-vocabulary class=" text-indigo-500" width="32" height="32" />

@@ -1,0 +1,1 @@
+<address class=" text-current font-medium">{{ $slot }}</address>

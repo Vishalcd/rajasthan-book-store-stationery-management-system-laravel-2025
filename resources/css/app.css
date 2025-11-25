@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::selection {
+    @apply bg-indigo-500 text-indigo-50;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    @apply accent-indigo-500;
+}
+
+/* Alert Animation */
+#alert {
+    animation: popin 8s cubic-bezier(0.55, -0.27, 0.44, 1.3);
+}
+
+@keyframes popin {
+    0% {
+        transform: translateY(100%);
+        bottom: 0;
+    }
+    20% {
+        transform: translateY(-100%);
+    }
+    90% {
+        transform: translateY(-100%);
+    }
+
+    100% {
+        transform: translateY(100%);
+        bottom: 0;
+    }
+}

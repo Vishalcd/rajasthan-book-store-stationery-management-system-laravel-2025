@@ -15,7 +15,7 @@
 
         .container {
             width: 90%;
-            margin: 40px auto;
+            margin: 20px auto;
         }
 
         .header {
@@ -23,8 +23,8 @@
             justify-content: space-between;
             align-items: flex-start;
             border-bottom: 2px solid #4f46e5;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
@@ -91,20 +91,33 @@
             color: #4f46e5;
             font-weight: 600;
         }
+
+        /* Prevent breaking tables across pages */
+        table {
+            page-break-inside: avoid;
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        td,
+        th {
+            page-break-inside: avoid;
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="container" style="page-break-inside: avoid; page-break-before: auto; page-break-after: auto;">
 
         <!-- Header -->
         <div class="header">
             <div>
                 <h1>{{ config('app.name') }}</h1>
-
-                <!-- UPDATED: Custom description -->
                 <p class="text-gray-500">
-                    {{ config('app.description', 'Your business description goes here...') }}
+                    {{ config('app.description', 'Thank you for your purchase!') }}
                 </p>
             </div>
 
@@ -121,27 +134,32 @@
             <p><strong>Mobile Number:</strong> {{ $invoice->customer_mobile ?? html_entity_decode('&mdash;') }}</p>
         </div>
 
+        @php
+        $bundleTotal = 0;
+        $extraTotal = 0;
+        @endphp
+
         <!-- Bundle Details -->
         <h3 class="section-title">Bundle Details</h3>
+
         <table class="details">
             <thead>
                 <tr>
                     <th>#</th>
                     <th>Book Title</th>
                     <th>Publisher</th>
-                    <th class="text-right">MRP ()</th>
+                    <th class="text-right">MRP</th>
                 </tr>
             </thead>
             <tbody>
-                @php $total = 0; @endphp
                 @foreach ($bundle->books as $index => $book)
+                @php $bundleTotal += $book->selling_price; @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $book->title }}</td>
                     <td>{{ $book->publisher->name ?? 'N/A' }}</td>
                     <td class="text-right">{{ formatPrice($book->selling_price) }}</td>
                 </tr>
-                @php $total += $book->selling_price; @endphp
                 @endforeach
             </tbody>
         </table>
@@ -149,6 +167,7 @@
         <!-- Extra Items -->
         @if($invoice->extraItems && count($invoice->extraItems) > 0)
         <h3 class="section-title">Extra Items</h3>
+
         <table class="details">
             <thead>
                 <tr>
@@ -156,41 +175,62 @@
                     <th>Item Name</th>
                     <th>Price</th>
                     <th>Quantity</th>
-                    <th>Total MRP ()</th>
+                    <th>Total MRP</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($invoice->extraItems as $i => $item)
+                @php
+                $itemTotal = $item->price * $item->quantity;
+                $extraTotal += $itemTotal;
+                @endphp
+
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $item->name }}</td>
                     <td>{{ formatPrice($item->price) }}</td>
                     <td>{{ $item->quantity }}</td>
-                    <td>{{ formatPrice($item->total_price) }}</td>
+                    <td class="text-right">{{ formatPrice($itemTotal) }}</td>
                 </tr>
-                @php $total += $item->price; @endphp
                 @endforeach
             </tbody>
         </table>
         @endif
 
+        @php
+        $subTotal = $bundleTotal + $extraTotal;
+        @endphp
+
         <!-- Summary -->
         <h3 class="section-title">Payment Summary</h3>
+
         <table class="summary">
             <tr>
-                <th>Subtotal</th>
-                <td class="text-right">{{ formatPrice($total) }}</td>
+                <th>Subtotal (Books + Extra Items)</th>
+                <td class="text-right">{{ formatPrice($subTotal) }}</td>
             </tr>
 
+            <tr>
+                <th>Bundle Total</th>
+                <td class="text-right">{{ formatPrice($bundleTotal) }}</td>
+            </tr>
+
+            @if($extraTotal > 0)
+            <tr>
+                <th>Extra Items Total</th>
+                <td class="text-right">{{ formatPrice($extraTotal) }}</td>
+            </tr>
+            @endif
+
             <tr class="total">
-                <th>Total Payable</th>
-                <td class="text-right">{{ formatPrice($invoice->amount) }}</td>
+                <th><strong>Total Payable</strong></th>
+                <td class="text-right"><strong>{{ formatPrice($invoice->amount) }}</strong></td>
             </tr>
         </table>
 
         <div class="footer">
-            <p>Thank you for your purchase!</p>
             <p class="brand">{{ config('app.name') }}</p>
+            <p>65, Kotwali Rd, gandhi chowk, Sri Ganganagar, Rajasthan 335001</p>
         </div>
 
     </div>

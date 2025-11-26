@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
         // Checkouts
         Route::get('/checkout/bundle/{bundle}', [CheckoutController::class, 'show'])->name('checkout.bundle.show');
         Route::post('/checkout/bundle/{bundle}', [CheckoutController::class, 'process'])->name('checkout.bundle.process');
+        Route::get('/checkout/verify', [CheckoutController::class, 'verifyPayment'])->name('checkout.bundle.verify');
     });
 
     Route::middleware('role:school_head')->group(function () {

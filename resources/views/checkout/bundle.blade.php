@@ -75,54 +75,90 @@
 
 
                 {{-- ORDER SUMMARY (Moved Near Submit Button) --}}
-                <div class="bg-white shadow-sm rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4">Order Summary</h3>
+                <div class="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
 
+                    <h3 class="text-xl font-bold mb-6 text-gray-800 border-b pb-3 flex items-center gap-2">
+                        <x-tabler-receipt-rupee class=" text-gray-800 w-6 h-6" /> Order Summary (Bill)
+                    </h3>
 
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span>Total Book Price:</span>
-                            <span>{{ formatPrice($bundlePrice) }}</span>
-                        </div>
-
-                        <div class="flex justify-between">
-                            <span>Discount ({{ $bundle->customer_discount }}%):</span>
-                            <span>- {{ formatPrice($totalDiscount) }}</span>
-                        </div>
+                    <!-- BILL BODY -->
+                    <div class="space-y-3 text-sm">
 
                         <div class="flex justify-between">
-                            <span>Our Revenue:</span>
-                            <span>{{ formatPrice($ourRevenue) }}</span>
+                            <span class="text-gray-600">Total Book Price:</span>
+                            <span class="font-medium">{{ formatPrice($bundlePrice) }}</span>
                         </div>
 
-
-                        <div class="my-6 py-3 border-y border-dotted border-stone-200">
-                            <div class="flex justify-between font-semibold text-gray-900">
-                                <span>Bundle Price:</span>
-                                <span data-price="{{ $ourRevenue }}" id="bundlePrice">{{
-                                    formatPrice($ourRevenue)}}</span>
-                            </div>
-
-                            <div class="flex justify-between mt-3">
-                                <span>Other Items:</span>
-                                <span id="extraTotal">{{ formatPrice(0) }}</span>
-                            </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Discount ({{ $bundle->customer_discount }}%):</span>
+                            <span class="font-medium text-red-600">- {{ formatPrice($totalDiscount) }}</span>
                         </div>
 
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Our Revenue:</span>
+                            <span class="font-medium text-gray-800">{{ formatPrice($ourRevenue) }}</span>
+                        </div>
+
+                        <!-- Dotted separator -->
+                        <div class="border-t border-dashed my-4"></div>
+
+                        <div class="flex justify-between font-semibold text-gray-900">
+                            <span>Bundle Price:</span>
+                            <span id="bundlePrice" data-price="{{ $ourRevenue }}">
+                                {{ formatPrice($ourRevenue) }}
+                            </span>
+                        </div>
+
+                        <div class="flex justify-between mt-1">
+                            <span class="text-gray-600">Other Items:</span>
+                            <span id="extraTotal" class="font-medium">{{ formatPrice(0) }}</span>
+                        </div>
+
+                        <!-- Dotted separator -->
+                        <div class="border-t border-dashed my-4"></div>
 
                         <div class="flex justify-between text-lg font-bold text-indigo-700">
-                            <span>Final Amount to Pay:</span>
+                            <span>Total Amount to Pay:</span>
                             <span id="finalPay">{{ formatPrice($ourRevenue) }}</span>
+                        </div>
+
+                    </div>
+
+                    <!-- PAYMENT TYPE -->
+                    <div class="mt-6 p-4 rounded-lg bg-gray-50 border">
+                        <h3 class="text-md font-semibold mb-3 flex items-center gap-2">
+                            <x-tabler-credit-card-pay class=" text-gray-800 w-5 h-5" /> Select Payment Type
+                        </h3>
+
+                        <div class="flex items-center gap-6">
+
+                            <label class="flex items-center gap-2 cursor-pointer text-gray-700">
+                                <input type="radio" required name="payment_type" value="cash"
+                                    class="text-indigo-600 h-4 w-4" checked>
+                                <span>Cash Payment</span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer text-gray-700">
+                                <input type="radio" required name="payment_type" value="online"
+                                    class="text-indigo-600 h-4 w-4">
+                                <span>Online Payment</span>
+                            </label>
+
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3 mt-4">
-                        <input id="confirm_payment" type="checkbox" name="confirm_payment">
-                        <label for="confirm_payment">I confirm that payment is received.</label>
+                    <!-- CONFIRM CHECKBOX -->
+                    <div class="flex items-center gap-3 mt-5">
+                        <input id="confirm_payment" type="checkbox" required name="confirm_payment"
+                            class="h-4 w-4 text-indigo-600 border-gray-300">
+                        <label for="confirm_payment" class="text-gray-700">
+                            I confirm that payment is received.
+                        </label>
                     </div>
 
-                    <div class="flex justify-end mt-5">
-                        <x-primary-button id="finalPayBtn">
+                    <!-- BUTTON -->
+                    <div class="flex justify-end mt-6">
+                        <x-primary-button id="finalPayBtn" class="px-6 py-3 text-base">
                             Pay {{ formatPrice($ourRevenue) }}
                         </x-primary-button>
                     </div>

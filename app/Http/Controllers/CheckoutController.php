@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Razorpay\Api\Api;
 
 class CheckoutController extends Controller
 {
@@ -44,7 +45,7 @@ class CheckoutController extends Controller
     /**
      * Confirm customer payment and create sale & invoice.
      */
-    public function process(Request $request, Bundle $bundle): RedirectResponse
+    public function process(Request $request, Bundle $bundle)
     {
         $validated = $request->validate([
             'customer_name' => 'nullable|string|max:255',
@@ -56,112 +57,203 @@ class CheckoutController extends Controller
             'extra_items.*.price' => 'nullable|numeric|min:0',
             'extra_items.*.quantity' => 'nullable|integer|min:1',
 
+            'payment_type' => 'required|in:cash,online',
             'confirm_payment' => 'required',
         ]);
 
+        // ------------------------------
+        // Calculate totals
+        // ------------------------------
+        $bundlePrice = $bundle->books->sum('selling_price');
+        $totalDiscount = $bundlePrice * ($bundle->customer_discount / 100);
+        $updatedBundlePrice = $bundlePrice - $totalDiscount;
 
-        try {
-            $invoice = DB::transaction(function () use ($validated, $bundle) {
+        $extraItems = $validated['extra_items'] ?? [];
+        $extraTotal = collect($extraItems)->sum(function ($item) {
+            $qty = $item['quantity'] ?? 1;
+            return $qty * floatval($item['price']);
+        });
 
-                // -------------------------------------
-                // 1) Calculate Bundle Price
-                // -------------------------------------
+        $finalAmount = $updatedBundlePrice + $extraTotal;
 
-                $bundlePrice = $bundle->books->sum('selling_price');
+        // ------------------------------
+        // CASH PAYMENT
+        // ------------------------------
+        if ($validated['payment_type'] === 'cash') {
+            try {
+                $invoice = DB::transaction(function () use ($validated, $bundle, $extraItems, $finalAmount, $updatedBundlePrice) {
 
-                $totalDiscount = $bundlePrice * ($bundle->customer_discount / 100);
-                $updatedBundlePrice = $bundlePrice - $totalDiscount;
+                    // Create Invoice
+                    $invoice = Invoice::create([
+                        'bundle_id' => $bundle->id,
+                        'amount' => $finalAmount,
+                        'customer_name' => $validated['customer_name'],
+                        'customer_number' => $validated['customer_number'],
+                        'note' => $validated['note'] ?? '',
+                        'payment_type' => 'cash',
+                    ]);
 
-                // -------------------------------------
-                // 2) Extra Items (with quantity)
-                // -------------------------------------
+                    $invoice->invoice_number = 'INV-'.str_pad($invoice->id, 6, '0', STR_PAD_LEFT);
+                    $invoice->save();
 
-                $extraItems = $validated['extra_items'] ?? [];
+                    // Extra Items
+                    foreach ($extraItems as $item) {
+                        if (! empty($item['name'])) {
+                            $qty = $item['quantity'] ?? 1;
 
-                $extraTotal = collect($extraItems)->sum(function ($item) {
-                    $qty = isset($item['quantity']) ? intval($item['quantity']) : 1;
-                    $price = floatval($item['price'] ?? 0);
-                    return $qty * $price;
+                            ExtraItem::create([
+                                'invoice_id' => $invoice->id,
+                                'name' => $item['name'],
+                                'price' => $item['price'],
+                                'quantity' => $qty,
+                                'total_price' => $qty * $item['price'],
+                            ]);
+                        }
+                    }
+
+                    // Sale
+                    Sale::create([
+                        'invoice_id' => $invoice->id,
+                        'bundle_id' => $bundle->id,
+                        'amount' => $finalAmount,
+                        'payment_type' => 'cash',
+                    ]);
+
+                    // Update revenue
+                    $bundle->school->increment(
+                        'total_revenue',
+                        $updatedBundlePrice * ($bundle->school_percentage / 100)
+                    );
+
+                    return $invoice;
                 });
 
-                // Final Amount
-                $finalAmount = $updatedBundlePrice + $extraTotal;
+                return redirect()->route('sales.index')
+                    ->with('success', 'Cash payment recorded successfully!');
+            } catch (Exception $e) {
+                Log::error('Cash Payment Failed: '.$e->getMessage());
+                return back()->with('error', 'Cash payment failed. Try again.');
+            }
+        }
 
-                // -------------------------------------
-                // 3) Create Invoice
-                // -------------------------------------
+        // ------------------------------
+        // ONLINE PAYMENT (Razorpay)
+        // ------------------------------
+        $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
 
-                $invoice = Invoice::create([
-                    'bundle_id' => $bundle->id,
-                    'invoice_number' => '',
-                    'amount' => $finalAmount,
-                    'customer_name' => $validated['customer_name'],
-                    'customer_number' => $validated['customer_number'],
-                    'note' => $validated['note'] ?? null,
-                ]);
+        $orderData = [
+            'amount' => intval($finalAmount * 100),
+            'currency' => 'INR',
+            'receipt' => 'bundle_'.$bundle->id.'_'.time(),
+            'notes' => [
+                'bundle_id' => $bundle->id,
+                'customer_name' => $validated['customer_name'] ?? '',
+                'customer_number' => $validated['customer_number'] ?? '',
+                'amount' => $finalAmount,
+                'note' => $validated['note'] ?? '',
+                'extra_items' => json_encode($extraItems),
+            ],
+        ];
 
-                // Generate Invoice Number
-                $invoice->invoice_number = 'INV-'.str_pad($invoice->id, 6, '0', STR_PAD_LEFT);
-                $invoice->save();
+        $razorpayOrder = $api->order->create($orderData);
 
-                // -------------------------------------
-                // 4) Save Extra Items
-                // -------------------------------------
+        return view('checkout.razorpay', [
+            'bundle' => $bundle,
+            'order' => $razorpayOrder,
+            'amount' => $finalAmount,
+            'customer_name' => $validated['customer_name'],
+            'customer_number' => $validated['customer_number'],
+            'note' => $validated['note'],
+        ]);
+    }
 
-                foreach ($extraItems as $item) {
-                    if (! empty($item['name']) && $item['price'] >= 0) {
 
-                        $quantity = isset($item['quantity']) ? intval($item['quantity']) : 1;
-                        $totalPrice = $quantity * floatval($item['price']);
+    public function verifyPayment(Request $request)
+    {
+        $payment_id = $request->razorpay_payment_id;
+        $order_id = $request->razorpay_order_id;
+        $signature = $request->razorpay_signature;
 
-                        ExtraItem::create([
-                            'invoice_id' => $invoice->id,
-                            'name' => $item['name'],
-                            'price' => $item['price'],
-                            'quantity' => $quantity,
-                            'total_price' => $totalPrice,
-                        ]);
-                    }
-                }
+        $api = new Api(env('RAZORPAY_KEY'), env('RAZORPAY_SECRET'));
 
-                // -------------------------------------
-                // 5) Sale Record
-                // -------------------------------------
+        try {
+            // Verify Signature
+            $api->utility->verifyPaymentSignature([
+                'razorpay_order_id' => $order_id,
+                'razorpay_payment_id' => $payment_id,
+                'razorpay_signature' => $signature
+            ]);
 
-                Sale::create([
+            // Fetch Order
+            $razorpayOrder = $api->order->fetch($order_id);
+            $notes = $razorpayOrder['notes'] ?? [];
+
+            // Read notes safely
+            $bundle_id = $notes['bundle_id'] ?? null;
+            $customer_name = $notes['customer_name'] ?? '';
+            $customer_number = $notes['customer_number'] ?? '';
+            $final_amount = $notes['amount'] ?? 0;
+            $note = $notes['note'] ?? '';
+            $extra_items = json_decode($notes['extra_items'] ?? '[]', true);
+
+            // Load bundle
+            $bundle = Bundle::with('books', 'school')->findOrFail($bundle_id);
+
+            DB::beginTransaction();
+
+            // Invoice
+            $invoice = Invoice::create([
+                'bundle_id' => $bundle->id,
+                'amount' => $final_amount,
+                'customer_name' => $customer_name,
+                'customer_number' => $customer_number,
+                'note' => $note,
+                'payment_type' => 'online',
+            ]);
+
+            $invoice->invoice_number = 'INV-'.str_pad($invoice->id, 6, '0', STR_PAD_LEFT);
+            $invoice->save();
+
+            // Extra Items
+            foreach ($extra_items as $item) {
+                ExtraItem::create([
                     'invoice_id' => $invoice->id,
-                    'bundle_id' => $bundle->id,
-                    'amount' => $finalAmount,
+                    'name' => $item['name'],
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity'],
+                    'total_price' => $item['price'] * $item['quantity'],
                 ]);
+            }
 
-                // -------------------------------------
-                // 6) Add School Revenue
-                // -------------------------------------
+            // Sale
+            Sale::create([
+                'invoice_id' => $invoice->id,
+                'bundle_id' => $bundle->id,
+                'amount' => $final_amount,
+                'payment_type' => 'online',
+                'payment_id' => $payment_id,
+            ]);
 
-                $school = School::findOrFail($bundle->school_id);
+            // Revenue
+            $updatedPrice = $bundle->books->sum('selling_price')
+                - ($bundle->books->sum('selling_price') * ($bundle->customer_discount / 100));
 
-                $schoolRevenue = $updatedBundlePrice * ($bundle->school_percentage / 100);
+            $schoolRevenue = $updatedPrice * ($bundle->school_percentage / 100);
+            $bundle->school->increment('total_revenue', $schoolRevenue);
 
-                $school->update([
-                    'total_revenue' => ($school->total_revenue ?? 0) + $schoolRevenue
-                ]);
+            DB::commit();
 
-                return $invoice;
-            });
-
-            return Redirect::route('sales.index')
-                ->with('success', 'Payment successful! Invoice & Sale recorded successfully.');
+            return redirect()->route('sales.index')
+                ->with('success', 'Payment successful! Invoice created.');
 
         } catch (Exception $e) {
 
-            Log::error('Invoice/Sale processing failed', [
-                'error' => $e->getMessage(),
-                'bundle_id' => $bundle->id,
-            ]);
+            DB::rollBack();
 
-            return back()->withErrors([
-                'error' => 'Failed to complete the transaction. Please try again.'
-            ]);
+            Log::error("Razorpay verify error: ".$e->getMessage());
+
+            return redirect()->route('bundles.index')
+                ->with('error', 'Payment verification failed.');
         }
     }
 

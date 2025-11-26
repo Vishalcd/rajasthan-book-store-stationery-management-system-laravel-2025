@@ -34,7 +34,6 @@ class SaleController extends Controller
             'bundle' => $invoice->bundle,
             'extra_items' => $invoice->extraItems,
         ])
-            ->setPaper('a4', 'portrait')
             ->setOption('margin-top', 10)
             ->setOption('margin-bottom', 10)
             ->setOption('margin-left', 10)
@@ -42,6 +41,5 @@ class SaleController extends Controller
 
         return $pdf->stream("invoice-{$invoice->id}.pdf");
     }
-
 
 }

@@ -17,7 +17,7 @@ class PublisherController extends Controller
     {
         $publishers = Publisher::filter($request, [
             'name' => 'string',
-        ])->paginate(20)->withQueryString();
+        ])->orderBy('name', 'asc')->paginate(20)->withQueryString();
 
         return view('publishers.index', compact('publishers'));
     }

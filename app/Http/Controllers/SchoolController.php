@@ -20,7 +20,7 @@ class SchoolController extends Controller
     {
         $schools = School::filter($request, [
             'name' => 'string',
-        ])->latest()->paginate(20);
+        ])->orderBy('name', 'asc')->paginate(20);
         return view('schools.index', compact('schools'));
     }
 

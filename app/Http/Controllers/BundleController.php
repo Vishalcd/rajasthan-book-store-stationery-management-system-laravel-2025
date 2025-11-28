@@ -22,7 +22,7 @@ class BundleController extends Controller
      */
     public function index(): View
     {
-        $bundles = Bundle::with(['school', 'books'])->withCount('books')->latest()->paginate(10);
+        $bundles = Bundle::with(['school', 'books'])->orderBy('school.name', 'asc')->withCount('books')->latest()->paginate(10);
         return view('bundles.index', compact('bundles'));
     }
 

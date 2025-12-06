@@ -43,10 +43,10 @@ class BookController extends Controller
         $validated = $request->validate([
             'publisher_id' => 'required|exists:publishers,id',
             'title' => 'required|string|max:255',
-            'author' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'author' => 'required|string|max:255',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
             'cover_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'description' => 'nullable|string',
         ]);
@@ -89,10 +89,10 @@ class BookController extends Controller
         $validated = $request->validate([
             'publisher_id' => 'required|exists:publishers,id',
             'title' => 'required|string|max:255',
-            'author' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'author' => 'required|string|max:255',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
             'cover_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'description' => 'nullable|string',
         ]);

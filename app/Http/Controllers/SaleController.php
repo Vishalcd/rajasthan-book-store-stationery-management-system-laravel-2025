@@ -34,10 +34,12 @@ class SaleController extends Controller
             'bundle' => $invoice->bundle,
             'extra_items' => $invoice->extraItems,
         ])
-            ->setOption('margin-top', 10)
-            ->setOption('margin-bottom', 10)
-            ->setOption('margin-left', 10)
-            ->setOption('margin-right', 10);
+            ->setOption('page-width', 80)
+            ->setOption('disable-smart-shrinking', true)
+            ->setOption('no-stop-slow-scripts', true)
+            ->setOption('javascript-delay', 300)
+            ->setOption('enable-local-file-access', true);
+
 
         return $pdf->stream("invoice-{$invoice->id}.pdf");
     }

@@ -39,16 +39,16 @@ class PublisherController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'contact_person' => 'required|string|max:255',
-            'email' => 'required|email|unique:publishers,email',
+            'email' => 'nullable|email|unique:publishers,email',
             'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:500',
+            'address' => 'nullable|string|max:500',
         ]);
 
         // Store data in database
         Publisher::create($validated);
 
         // Redirect back with success message
-        return Redirect::route('publishers.index')->with('status', 'success');
+        return Redirect::route('publishers.index')->with('success', 'Publisher created successfully.');
     }
 
     /**
@@ -80,16 +80,16 @@ class PublisherController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'contact_person' => 'required|string|max:255',
-            'email' => 'required|email|unique:publishers,email,'.$publisher->id,
+            'email' => 'nullable|email|unique:publishers,email,'.$publisher->id,
             'phone' => 'required|string|max:20',
-            'address' => 'required|string|max:500',
+            'address' => 'nullable|string|max:500',
         ]);
 
         // Update existing publisher
         $publisher->update($validated);
 
         // Redirect back with success message
-        return Redirect::route('publishers.index')->with('status', 'success');
+        return Redirect::route('publishers.index')->with('success', 'Publisher updated successfully.');
     }
 
     /**
@@ -101,6 +101,6 @@ class PublisherController extends Controller
         $publisher->delete();
 
         // Redirect back with success message
-        return Redirect::route('publishers.index')->with('status', 'deleted');
+        return Redirect::route('publishers.index')->with('success', 'Publisher deleted successfully.');
     }
 }

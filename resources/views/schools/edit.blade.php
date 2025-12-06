@@ -59,7 +59,7 @@
                                     <div>
                                         <x-input-label for="email" :value="__('School Email')" />
                                         <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
-                                            required autocomplete="email" placeholder="school@mail.com"
+                                            autocomplete="email" placeholder="school@mail.com"
                                             :value="old('email', $school->email)" />
                                         <x-input-error class="mt-2" :messages="$errors->get('email')" />
                                     </div>
@@ -75,7 +75,7 @@
                                     <div>
                                         <x-input-label for="address" :value="__('School Address')" />
                                         <x-text-input id="address" name="address" type="text" class="mt-1 block w-full"
-                                            required autocomplete="address" placeholder="123 Main Street"
+                                            autocomplete="address" placeholder="123 Main Street"
                                             :value="old('address', $school->address)" />
                                         <x-input-error class="mt-2" :messages="$errors->get('address')" />
                                     </div>
@@ -83,7 +83,7 @@
                                     <div>
                                         <x-input-label for="logo" :value="__('Upload School Logo')" />
                                         <x-text-input id="logo" name="logo" type="file" class="mt-1 block w-full"
-                                            required autocomplete="logo" placeholder="e.g. 50" :value="old('logo')" />
+                                            autocomplete="logo" placeholder="e.g. 50" :value="old('logo')" />
                                         <x-input-error class="mt-2" :messages="$errors->get('logo')" />
                                     </div>
 

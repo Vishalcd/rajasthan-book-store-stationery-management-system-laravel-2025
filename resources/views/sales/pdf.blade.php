@@ -4,104 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <title>Invoice #{{ $invoice->id }}</title>
+
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
             margin: 0;
             padding: 0;
-            color: #1f2937;
-            font-size: 13px;
+            width: 58mm;
+            font-size: 11px;
+            color: #000;
         }
 
         .container {
-            width: 90%;
-            margin: 20px auto;
+            width: 100%;
+            padding: 8px 5px;
+        }
+
+        h3,
+        p,
+        small {
+            margin: 0;
+            padding: 0;
+        }
+
+        .center {
+            text-align: center;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 2px solid #4f46e5;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            color: #111827;
-            margin: 0;
-        }
-
-        .info {
-            text-align: right;
-            font-size: 12px;
-            color: #6b7280;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 6px;
         }
 
         .section-title {
-            font-size: 16px;
+            margin: 8px 0 3px 0;
             font-weight: bold;
-            color: #4f46e5;
-            margin-bottom: 8px;
+            font-size: 11px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 2px;
         }
 
-        .details,
-        .summary {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            font-size: 10px;
+            margin-top: 3px;
         }
 
-        .details th,
-        .details td,
-        .summary th,
-        .summary td {
-            border: 1px solid #d1d5db;
-            padding: 8px;
-            text-align: left;
+        th,
+        td {
+            padding: 3px 0;
         }
 
-        .details th {
-            background-color: #f3f4f6;
+        th {
+            border-bottom: 1px dashed #000;
         }
 
-        .summary th {
-            background-color: #eef2ff;
-        }
-
-        .text-right {
+        .right {
             text-align: right;
+        }
+
+        .bold {
+            font-weight: bold;
         }
 
         .total {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 11px;
+            border-top: 1px dashed #000;
+            padding-top: 4px;
         }
 
         .footer {
-            border-top: 1px solid #e5e7eb;
+            margin-top: 10px;
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+            font-size: 9px;
             text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-            padding-top: 10px;
         }
 
-        .brand {
-            color: #4f46e5;
-            font-weight: 600;
-        }
-
-        /* Prevent breaking tables across pages */
-        table {
-            page-break-inside: avoid;
-        }
-
-        tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-        }
-
+        /* Avoid page breaks for thermal printers */
+        table,
+        tr,
         td,
         th {
             page-break-inside: avoid;
@@ -110,55 +95,45 @@
 </head>
 
 <body>
-    <div class="container" style="page-break-inside: avoid; page-break-before: auto; page-break-after: auto;">
+
+    <div class="container">
 
         <!-- Header -->
-        <div class="header">
-            <div>
-                <h1>{{ config('app.name') }}</h1>
-                <p class="text-gray-500">
-                    {{ config('app.description', 'Thank you for your purchase!') }}
-                </p>
-            </div>
-
-            <div class="info">
-                <p><strong>Invoice #:</strong> {{ $invoice->invoice_number }}</p>
-                <p><strong>Date:</strong> {{ $invoice->created_at->format('d M, Y') }}</p>
-                <p><strong>Status:</strong> Paid</p>
-            </div>
+        <div class="header center">
+            <h3>{{ config('app.name') }}</h3>
+            <small>{{ config('app.description', 'Thank you for your purchase!') }}</small><br>
+            <small>Invoice #{{ $invoice->invoice_number }}</small><br>
+            <small>{{ $invoice->created_at->format('d M Y') }}</small>
         </div>
 
         <!-- Customer Info -->
-        <div style="margin-bottom: 20px;">
-            <p><strong>Customer Name:</strong> {{ $invoice->customer_name ?? html_entity_decode('&mdash;') }}</p>
-            <p><strong>Mobile Number:</strong> {{ $invoice->customer_mobile ?? html_entity_decode('&mdash;') }}</p>
-        </div>
+        <p><strong>Customer:</strong> {{ $invoice->customer_name ?? '—' }}</p>
+        <p><strong>Mobile:</strong> {{ $invoice->customer_mobile ?? '—' }}</p>
 
         @php
         $bundleTotal = 0;
         $extraTotal = 0;
         @endphp
 
-        <!-- Bundle Details -->
-        <h3 class="section-title">Bundle Details</h3>
+        <!-- Bundle Items -->
+        <div class="section-title">Bundle Items</div>
 
-        <table class="details">
+        <table>
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Book Title</th>
-                    <th>Publisher</th>
-                    <th class="text-right">MRP</th>
+                    <th>Book</th>
+                    <th class="right">MRP</th>
                 </tr>
             </thead>
+
             <tbody>
-                @foreach ($bundle->books as $index => $book)
+                @foreach ($bundle->books as $i => $book)
                 @php $bundleTotal += $book->selling_price; @endphp
                 <tr>
-                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $i + 1 }}</td>
                     <td>{{ $book->title }}</td>
-                    <td>{{ $book->publisher->name ?? 'N/A' }}</td>
-                    <td class="text-right">{{ formatPrice($book->selling_price) }}</td>
+                    <td class="right">{{ formatPrice($book->selling_price) }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -166,16 +141,14 @@
 
         <!-- Extra Items -->
         @if($invoice->extraItems && count($invoice->extraItems) > 0)
-        <h3 class="section-title">Extra Items</h3>
+        <div class="section-title">Extra Items</div>
 
-        <table class="details">
+        <table>
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Item Name</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Total MRP</th>
+                    <th>Item</th>
+                    <th class="right">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -187,53 +160,59 @@
 
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $item->name }}</td>
-                    <td>{{ formatPrice($item->price) }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td class="text-right">{{ formatPrice($itemTotal) }}</td>
+                    <td>{{ $item->name }} x{{ $item->quantity }}</td>
+                    <td class="right">{{ formatPrice($itemTotal) }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
 
+        <!-- Summary -->
         @php
-        $subTotal = $bundleTotal + $extraTotal;
+        $discountPercentage = $invoice->bundle->customer_discount ?? 0;
+        $discountAmount = ($bundleTotal * $discountPercentage) / 100;
+
+        // final total
+        $finalTotal = ($bundleTotal - $discountAmount) + $extraTotal;
         @endphp
 
-        <!-- Summary -->
-        <h3 class="section-title">Payment Summary</h3>
+        <div class="section-title">Summary</div>
 
-        <table class="summary">
+        <table>
             <tr>
-                <th>Subtotal (Books + Extra Items)</th>
-                <td class="text-right">{{ formatPrice($subTotal) }}</td>
+                <td>Bundle Total</td>
+                <td class="right">{{ formatPrice($bundleTotal) }}</td>
             </tr>
 
+            @if($discountPercentage > 0)
             <tr>
-                <th>Bundle Total</th>
-                <td class="text-right">{{ formatPrice($bundleTotal) }}</td>
+                <td class="bold">Discount ({{ $discountPercentage }}%)</td>
+                <td class="right bold">- {{ formatPrice($discountAmount) }}</td>
             </tr>
+            @endif
 
             @if($extraTotal > 0)
             <tr>
-                <th>Extra Items Total</th>
-                <td class="text-right">{{ formatPrice($extraTotal) }}</td>
+                <td>Extra Items</td>
+                <td class="right">{{ formatPrice($extraTotal) }}</td>
             </tr>
             @endif
 
             <tr class="total">
-                <th><strong>Total Payable</strong></th>
-                <td class="text-right"><strong>{{ formatPrice($invoice->amount) }}</strong></td>
+                <td class="bold">Total Payable</td>
+                <td class="right bold">{{ formatPrice($finalTotal) }}</td>
             </tr>
         </table>
 
+        <!-- Footer -->
         <div class="footer">
-            <p class="brand">{{ config('app.name') }}</p>
-            <p>65, Kotwali Rd, gandhi chowk, Sri Ganganagar, Rajasthan 335001</p>
+            <p>{{ config('app.name') }}</p>
+            <p>65, Kotwali Rd, Gandhi Chowk, Sri Ganganagar</p>
         </div>
 
     </div>
+
 </body>
 
 </html>

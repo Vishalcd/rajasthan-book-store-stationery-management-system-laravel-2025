@@ -88,15 +88,15 @@
                                     <div>
                                         <x-input-label for="cover_image" :value="__('Upload book Cover')" />
                                         <x-text-input id="cover_image" name="cover_image" type="file"
-                                            class="mt-1 block w-full" required autocomplete="cover_image"
-                                            placeholder="e.g. 50" :value="old('cover_image')" />
+                                            class="mt-1 block w-full" autocomplete="cover_image" placeholder="e.g. 50"
+                                            :value="old('cover_image')" />
                                         <x-input-error class="mt-2" :messages="$errors->get('cover_image')" />
                                     </div>
 
                                     <div class=" col-span-full">
                                         <x-input-label for="description" :value="__('Book Description')" />
                                         <x-text-input id="description" name="description" type="textarea"
-                                            class="mt-1 block w-full" required autocomplete="description"
+                                            class="mt-1 block w-full" autocomplete="description"
                                             placeholder="Enter book description"
                                             :value="old('description', $book->description)" />
                                         <x-input-error class="mt-2" :messages="$errors->get('description')" />

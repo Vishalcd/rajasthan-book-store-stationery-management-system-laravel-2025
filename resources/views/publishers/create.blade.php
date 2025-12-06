@@ -55,7 +55,7 @@
                                     <div>
                                         <x-input-label for="email" :value="__('Publisher Email')" />
                                         <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
-                                            required autocomplete="email" placeholder="publisher@mail.com" />
+                                            autocomplete="email" placeholder="publisher@mail.com" />
                                         <x-input-error class="mt-2" :messages="$errors->get('email')" />
                                     </div>
 
@@ -69,7 +69,7 @@
                                     <div class=" col-span-full">
                                         <x-input-label for="address" :value="__('Publisher Address')" />
                                         <x-text-input id="address" name="address" type="text" class="mt-1 block w-full"
-                                            required autocomplete="address" placeholder="123 Main Street" />
+                                            autocomplete="address" placeholder="123 Main Street" />
                                         <x-input-error class="mt-2" :messages="$errors->get('address')" />
                                     </div>
 

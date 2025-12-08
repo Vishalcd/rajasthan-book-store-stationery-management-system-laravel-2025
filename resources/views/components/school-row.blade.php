@@ -4,8 +4,10 @@
     <td class="px-4 py-3 border-y">{{ $loop->iteration }}</td>
     <td class=" border-y px-4 py-3">
         <div class="grid grid-cols-[max-content_1fr] gap-2 items-center">
-            <img src="{{ Storage::exists($school->logo) ? asset($school->logo) : asset('no-image-placeholder.png') }}"
-                alt="{{ $school->name }} School Logo" class="h-8 w-8 object-contain rounded-full" />
+            <img src="{{ $school->logo && Storage::exists($school->logo) 
+                        ? asset($school->logo) 
+                        : asset('no-image-placeholder.png') }}" alt="{{ $school->name }} School Logo"
+                class="h-8 w-8 object-contain rounded-full" />
             <div class="grid">
                 <p class=" font-medium">{{ $school->name }}</p>
                 <a href="mailto:{{ $school->email }}" class=" text-xs font-medium underline text-indigo-500">{{

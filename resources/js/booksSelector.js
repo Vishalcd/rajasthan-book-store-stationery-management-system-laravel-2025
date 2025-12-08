@@ -6,6 +6,9 @@ class BookSelector {
         this.searchUrl = this.container.dataset.searchUrl;
         this.books = JSON.parse(this.container.dataset.initialBooks || "[]");
 
+        // 🔥 NEW: keep a full master list of all loaded books
+        this.allBooks = [...this.books];
+
         this.grid = document.getElementById("books-grid");
         this.loader = document.getElementById("loader");
         this.searchInput = document.getElementById("book-search");
@@ -13,10 +16,6 @@ class BookSelector {
         this.selectedList = document.getElementById("selected-books-list");
 
         this.selectedIds = new Set();
-
-        this.renderBooks = this.renderBooks.bind(this);
-        this.renderSelected = this.renderSelected.bind(this);
-        this.fetchBooks = this.fetchBooks.bind(this);
 
         this.attachEvents();
         this.renderBooks();
@@ -168,7 +167,8 @@ class BookSelector {
 
         this.selectedBox.style.display = "block";
 
-        this.books
+        // 🔥 FIX: use ALL books, not only current search results
+        this.allBooks
             .filter((b) => this.selectedIds.has(b.id))
             .forEach((b) => {
                 const tag = document.createElement("span");
@@ -201,12 +201,20 @@ class BookSelector {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             this.books = await response.json();
+
+            // 🔥 FIX: merge new results into ALL books (avoid duplicates)
+            this.books.forEach((book) => {
+                if (!this.allBooks.find((b) => b.id === book.id)) {
+                    this.allBooks.push(book);
+                }
+            });
         } catch (error) {
             console.error("Search failed:", error);
             this.books = [];
         } finally {
             this.loader.style.display = "none";
             this.renderBooks();
+            this.renderSelected();
         }
     }
 }

@@ -5,9 +5,9 @@
     <span
         class=" px-2 py-0.5 text-center absolute right-3 top-3 text-white font-medium text-sm bg-black bg-opacity-50 rounded-md">{{
         formatPrice($book->selling_price) }}</span>
-    <img src="{{ Storage::exists($book->cover_image) 
-        ? asset($book->cover_image) 
-        : asset('book-placeholder.png') }}" alt="{{ $book->title }} Book Cover" class="w-full h-64 object-cover">
+    <img src="{{ $book->cover_image && Storage::exists($book->cover_image) 
+            ? asset($book->cover_image) 
+            : asset('book-placeholder.png') }}" alt="{{ $book->title }} Book Cover" class="w-full h-64 object-cover">
     <div class="px-4 ">
         <h3 class="text-sm font-semibold mb-2 truncate pt-4  text-nowrap">{{ $book->title }}</h3>
         <p class="text-gray-600 mb-4 truncate text-nowrap text-xs">{{ __("by")}} <strong>{{ $book->author }}</strong>
